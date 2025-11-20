@@ -7,6 +7,7 @@ import { Signup } from "./components/Signup";
 import { History } from "./components/History";
 import { Admin } from "./components/Admin";
 import { LandingPage } from "./components/LandingPage";
+import { Checkout } from "./components/Checkout";
 import { QrCode, LayoutDashboard, Home, DollarSign, LogIn, LogOut, History as HistoryIcon, Shield } from "lucide-react";
 import { Button } from "./components/ui/button";
 import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
@@ -31,7 +32,7 @@ export interface ConversionRecord {
   type: "url" | "text";
 }
 
-type ViewType = "home" | "dashboard" | "pricing" | "login" | "signup" | "history" | "admin" | "landing";
+type ViewType = "home" | "dashboard" | "pricing" | "login" | "signup" | "history" | "admin" | "landing" | "checkout";
 
 type ProfileRow = {
   id: string;
@@ -58,6 +59,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
 
   const mapProfileToUser = useCallback((sessionUser: SupabaseAuthUser, profile?: ProfileRow | null): User => {
     const defaultName = sessionUser.user_metadata?.full_name ?? sessionUser.email ?? "QR User";
@@ -533,13 +535,26 @@ export default function App() {
             currentPlan={user?.plan}
             onPlanSelect={(plan) => {
               if (user) {
-                setCurrentView("dashboard");
+                setSelectedPlan(plan);
+                setCurrentView("checkout");
               } else {
                 setCurrentView("signup");
               }
             }}
           />
         </section>
+      )}
+
+      {currentView === "checkout" && user && selectedPlan && (
+        <Checkout
+          selectedPlan={selectedPlan}
+          onBack={() => setCurrentView("pricing")}
+          onComplete={() => {
+            // Update user plan in database here
+            setUser({ ...user, plan: selectedPlan });
+            setCurrentView("dashboard");
+          }}
+        />
       )}
 
       {/* Footer */}
